@@ -8,8 +8,6 @@ const FormStats = () => {
   const [stats, setStats] = useState(null);
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // New States for Viewing Answers
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -50,7 +48,9 @@ const FormStats = () => {
         <div className="stat-card">
           <div className="stat-label">Submission Rate</div>
           <div className="stat-value">{submissionRate}%</div>
-          <div className="progress" style={{ marginTop: 10 }}><div className="progress-fill" style={{ width: `${submissionRate}%`, background: '#10b981' }}></div></div>
+          <div className="progress" style={{ marginTop: 10 }}>
+            <div className="progress-fill" style={{ width: `${submissionRate}%`, background: '#10b981' }}></div>
+          </div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Total Assigned</div>
@@ -79,7 +79,7 @@ const FormStats = () => {
                 <th>Status</th>
                 <th>Submitted at</th>
                 <th>Marks</th>
-                <th>Actions</th> {/* New Column */}
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -102,19 +102,38 @@ const FormStats = () => {
                     {sub.marksApplied === 0 && <span style={{ color: '#9ca3af' }}>—</span>}
                   </td>
                   <td>
-                    {sub.googleFormResponses ? (
-                      <button 
-                        className="btn btn-sm btn-primary"
-                        onClick={() => {
-                          setSelectedSubmission(sub);
-                          setShowModal(true);
-                        }}
-                      >
-                        View Answers
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '12px', color: '#9ca3af' }}>No Data</span>
-                    )}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {sub.googleFormResponses && Object.keys(sub.googleFormResponses).length > 0 ? (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => {
+                            setSelectedSubmission(sub);
+                            setShowModal(true);
+                          }}
+                        >
+                          View Answers
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>No Data</span>
+                      )}
+                      {sub.uploadedFileUrl && (
+                        <a
+                          href={sub.uploadedFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: '12px', fontWeight: 600,
+                            padding: '4px 10px', borderRadius: 6,
+                            background: '#f0fdf4', color: '#16a34a',
+                            border: '1px solid #bbf7d0',
+                            textDecoration: 'none',
+                            display: 'inline-flex', alignItems: 'center', gap: 4
+                          }}
+                        >
+                          📎 View File
+                        </a>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -123,7 +142,6 @@ const FormStats = () => {
         </div>
       </div>
 
-      {/* --- Response Modal --- */}
       {showModal && selectedSubmission && (
         <div style={modalStyles.overlay}>
           <div style={modalStyles.content}>
@@ -137,12 +155,37 @@ const FormStats = () => {
               {Object.entries(selectedSubmission.googleFormResponses).map(([question, answer]) => (
                 <div key={question} style={modalStyles.item}>
                   <div style={modalStyles.question}>{question}</div>
-                  <div style={modalStyles.answer}>{answer || "No response provided"}</div>
+                  {typeof answer === 'string' && answer.includes('drive.google.com') ? (
+                    <a
+                      href={answer}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#6366f1', fontSize: '14px', fontWeight: 600 }}
+                    >
+                      📎 View Uploaded File
+                    </a>
+                  ) : (
+                    <div style={modalStyles.answer}>{answer || 'No response provided'}</div>
+                  )}
                 </div>
               ))}
             </div>
+            {selectedSubmission.uploadedFileUrl && (
+              <div style={{ marginTop: 16, padding: '12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#16a34a' }}>📎 Uploaded File: </span>
+                
+                <a
+                  href={selectedSubmission.uploadedFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#16a34a', fontSize: 13 }}
+                >
+                  Open in Google Drive
+                </a>
+              </div>
+            )}
             <div style={{ textAlign: 'right', marginTop: '20px' }}>
-               <button className="btn" onClick={() => setShowModal(false)}>Close</button>
+              <button className="btn" onClick={() => setShowModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -151,7 +194,6 @@ const FormStats = () => {
   );
 };
 
-// Inline Styles for the Modal
 const modalStyles = {
   overlay: {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,

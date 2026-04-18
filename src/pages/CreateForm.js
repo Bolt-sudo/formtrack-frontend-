@@ -4,14 +4,15 @@ import API from '../api';
 
 // ── Question type options ─────────────────────────────────────
 const QUESTION_TYPES = [
-  { value: 'text',      label: 'Short text',  icon: '✏️' },
-  { value: 'paragraph', label: 'Paragraph',   icon: '📝' },
-  { value: 'radio',     label: 'Multiple choice', icon: '🔘' },
-  { value: 'checkbox',  label: 'Checkboxes',  icon: '☑️' },
-  { value: 'dropdown',  label: 'Dropdown',    icon: '🔽' },
-  { value: 'scale',     label: 'Linear scale', icon: '📊' },
-  { value: 'date',      label: 'Date',        icon: '📅' },
-  { value: 'time',      label: 'Time',        icon: '🕐' },
+  { value: 'text',       label: 'Short text',       icon: '✏️' },
+  { value: 'paragraph',  label: 'Paragraph',        icon: '📝' },
+  { value: 'radio',      label: 'Multiple choice',  icon: '🔘' },
+  { value: 'checkbox',   label: 'Checkboxes',       icon: '☑️' },
+  { value: 'dropdown',   label: 'Dropdown',         icon: '🔽' },
+  { value: 'scale',      label: 'Linear scale',     icon: '📊' },
+  { value: 'date',       label: 'Date',             icon: '📅' },
+  { value: 'time',       label: 'Time',             icon: '🕐' },
+  { value: 'fileUpload', label: 'File upload',      icon: '📎' },
 ];
 
 const CHOICE_TYPES = ['radio', 'checkbox', 'dropdown'];
@@ -202,19 +203,20 @@ const QuestionCard = ({ q, index, total, onChange, onRemove, onMove }) => {
       )}
 
       {/* Text/Paragraph/Date/Time — show preview hint */}
-      {['text', 'paragraph', 'date', 'time'].includes(q.type) && (
-        <div style={{ paddingLeft: 36 }}>
-          <div style={{
-            fontSize: 12, color: '#9ca3af', fontStyle: 'italic',
-            border: '1px dashed #e8ecf0', borderRadius: 6, padding: '8px 12px',
-          }}>
-            {q.type === 'text'      && 'Short answer text field'}
-            {q.type === 'paragraph' && 'Long answer paragraph field'}
-            {q.type === 'date'      && 'Date picker (MM/DD/YYYY)'}
-            {q.type === 'time'      && 'Time picker (HH:MM)'}
-          </div>
-        </div>
-      )}
+      {['text', 'paragraph', 'date', 'time', 'fileUpload'].includes(q.type) && (
+  <div style={{ paddingLeft: 36 }}>
+    <div style={{
+      fontSize: 12, color: '#9ca3af', fontStyle: 'italic',
+      border: '1px dashed #e8ecf0', borderRadius: 6, padding: '8px 12px',
+    }}>
+      {q.type === 'text'       && 'Short answer text field'}
+      {q.type === 'paragraph'  && 'Long answer paragraph field'}
+      {q.type === 'date'       && 'Date picker (MM/DD/YYYY)'}
+      {q.type === 'time'       && 'Time picker (HH:MM)'}
+      {q.type === 'fileUpload' && 'File upload (PDF, Image, etc.)'}
+    </div>
+  </div>
+)}
     </div>
   );
 };
