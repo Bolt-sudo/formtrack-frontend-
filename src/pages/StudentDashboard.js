@@ -82,7 +82,6 @@ const StudentDashboard = () => {
 
   if (loading) return <div className="loading">Loading your assignments...</div>;
 
-  /* ── colours exactly from the HTML file ── */
   const C = {
     bg:       "#f5f0ff",
     card:     "#ffffff",
@@ -105,7 +104,6 @@ const StudentDashboard = () => {
     amberBg:  "#fff4e0",
   };
 
-  /* ── Ring Stat Card ── */
   const RingCard = ({ value, outOf, unit, label, sub, color, trackColor }) => {
     const pct      = outOf ? Math.min(100, (Math.abs(value) / Math.max(outOf, 1)) * 100) : 65;
     const r        = 34;
@@ -153,7 +151,6 @@ const StudentDashboard = () => {
 
   return (
     <>
-      {/* Toast */}
       {toast && (
         <div style={{
           position: "fixed", top: 20, right: 20,
@@ -166,42 +163,38 @@ const StudentDashboard = () => {
         </div>
       )}
 
-      {/* ── Top bar ── */}
-<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 22 }}>
-  <div>
-    <h1 style={{ fontSize: 24, fontWeight: 800, color: C.t1, letterSpacing: "-0.5px" }}>
-      Hello, {user?.name?.split(" ")[0]} 👋
-    </h1>
-    <p style={{ fontSize: 13.5, color: C.t2, marginTop: 3 }}>
-      Pending assignments and submission history
-    </p>
-  </div>
-  
-  {/* Live date & time chip */}
-  <div style={{
-    textAlign: "right", // Aligns the text to the right inside the chip
-    background: C.accBg, 
-    border: "1px solid " + C.bd2,
-    padding: "7px 15px", 
-    borderRadius: "16px", // Adjusted for a multi-line look
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px"
-  }}>
-    <div style={{ fontSize: 12.5, fontWeight: 700, color: C.acc }}>
-      {liveDateStr}
-    </div>
-    <div style={{ fontSize: 11, fontWeight: 600, color: C.t2 }}>
-      {now.toLocaleTimeString("en-IN", { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: true 
-      })}
-    </div>
-  </div>
-</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 22 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: C.t1, letterSpacing: "-0.5px" }}>
+            Hello, {user?.name?.split(" ")[0]} 👋
+          </h1>
+          <p style={{ fontSize: 13.5, color: C.t2, marginTop: 3 }}>
+            Pending assignments and submission history
+          </p>
+        </div>
+        <div style={{
+          textAlign: "right",
+          background: C.accBg,
+          border: "1px solid " + C.bd2,
+          padding: "7px 15px",
+          borderRadius: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px"
+        }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.acc }}>
+            {liveDateStr}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.t2 }}>
+            {now.toLocaleTimeString("en-IN", {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            })}
+          </div>
+        </div>
+      </div>
 
-      {/* ── 4 Stat Ring Cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14, marginBottom: 22 }}>
         <RingCard
           value={pendingForms.length} outOf={totalForms}
@@ -225,7 +218,6 @@ const StudentDashboard = () => {
         />
       </div>
 
-      {/* ── Pending Assignments ── */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: C.t3, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
           PENDING ASSIGNMENTS
@@ -245,7 +237,6 @@ const StudentDashboard = () => {
                 background: C.card, border: "1px solid " + C.bd,
                 borderRadius: 16, overflow: "hidden", marginBottom: 12,
               }}>
-                {/* Pink action-required header */}
                 <div style={{
                   background: C.pinkBg, borderBottom: "1px solid " + C.pinkBd,
                   padding: "10px 20px",
@@ -259,7 +250,6 @@ const StudentDashboard = () => {
                   </span>
                 </div>
 
-                {/* Body */}
                 <div style={{ padding: "18px 20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: C.t1 }}>{form.title}</div>
@@ -267,7 +257,6 @@ const StudentDashboard = () => {
                       {form.subject} · {form.teacher?.name}
                     </div>
 
-                    {/* Tags */}
                     <div style={{ display: "flex", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
                       <span style={{
                         fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20,
@@ -284,7 +273,6 @@ const StudentDashboard = () => {
                       </span>
                     </div>
 
-                    {/* Progress bar - PINK/RED as per HTML */}
                     <div style={{ height: 5, background: C.bd, borderRadius: 4, marginTop: 12, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: deadlinePct + "%", background: C.pink, borderRadius: 4, transition: "width 1.4s ease" }} />
                     </div>
@@ -305,13 +293,24 @@ const StudentDashboard = () => {
                         Open form ↗
                       </a>
                     )}
-                    <button onClick={() => handleSubmit(form._id)} style={{
-                      fontSize: 12.5, fontWeight: 700, padding: "9px 16px",
-                      background: C.acc, color: "#fff", border: "none",
-                      borderRadius: 10, cursor: "pointer",
-                    }}>
-                      Mark submitted
-                    </button>
+                    {form.googleFormId ? (
+                      <div style={{
+                        fontSize: 12.5, fontWeight: 700, padding: "9px 16px",
+                        background: C.greenBg, color: C.green,
+                        border: "1.5px solid " + C.green,
+                        borderRadius: 10, display: "inline-flex", alignItems: "center", gap: 4,
+                      }}>
+                        ✅ Auto-tracked
+                      </div>
+                    ) : (
+                      <button onClick={() => handleSubmit(form._id)} style={{
+                        fontSize: 12.5, fontWeight: 700, padding: "9px 16px",
+                        background: C.acc, color: "#fff", border: "none",
+                        borderRadius: 10, cursor: "pointer",
+                      }}>
+                        Mark submitted
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -320,10 +319,7 @@ const StudentDashboard = () => {
         )}
       </div>
 
-      {/* ── Bottom grid: history + deadlines ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 14 }}>
-
-        {/* Submission history */}
         <div style={{ background: C.card, border: "1px solid " + C.bd, borderRadius: 16, padding: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>Submission history</h3>
@@ -380,7 +376,6 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* Upcoming deadlines */}
         <div style={{ background: C.card, border: "1px solid " + C.bd, borderRadius: 16, padding: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.t1 }}>Upcoming deadlines</h3>
