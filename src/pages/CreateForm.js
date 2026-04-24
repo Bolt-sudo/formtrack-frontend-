@@ -12,7 +12,6 @@ const QUESTION_TYPES = [
   { value: 'scale',      label: 'Linear scale',     icon: '📊' },
   { value: 'date',       label: 'Date',             icon: '📅' },
   { value: 'time',       label: 'Time',             icon: '🕐' },
-  { value: 'fileUpload', label: 'File upload',      icon: '📎' },
 ];
 
 const CHOICE_TYPES = ['radio', 'checkbox', 'dropdown'];
@@ -202,21 +201,20 @@ const QuestionCard = ({ q, index, total, onChange, onRemove, onMove }) => {
         </div>
       )}
 
-      {/* Text/Paragraph/Date/Time — show preview hint */}
-      {['text', 'paragraph', 'date', 'time', 'fileUpload'].includes(q.type) && (
-  <div style={{ paddingLeft: 36 }}>
-    <div style={{
-      fontSize: 12, color: '#9ca3af', fontStyle: 'italic',
-      border: '1px dashed #e8ecf0', borderRadius: 6, padding: '8px 12px',
-    }}>
-      {q.type === 'text'       && 'Short answer text field'}
-      {q.type === 'paragraph'  && 'Long answer paragraph field'}
-      {q.type === 'date'       && 'Date picker (MM/DD/YYYY)'}
-      {q.type === 'time'       && 'Time picker (HH:MM)'}
-      {q.type === 'fileUpload' && 'File upload (PDF, Image, etc.)'}
-    </div>
-  </div>
-)}
+      {/* Text/Paragraph/Date/Time preview hint */}
+      {['text', 'paragraph', 'date', 'time'].includes(q.type) && (
+        <div style={{ paddingLeft: 36 }}>
+          <div style={{
+            fontSize: 12, color: '#9ca3af', fontStyle: 'italic',
+            border: '1px dashed #e8ecf0', borderRadius: 6, padding: '8px 12px',
+          }}>
+            {q.type === 'text'      && 'Short answer text field'}
+            {q.type === 'paragraph' && 'Long answer paragraph field'}
+            {q.type === 'date'      && 'Date picker (MM/DD/YYYY)'}
+            {q.type === 'time'      && 'Time picker (HH:MM)'}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -229,17 +227,15 @@ const CreateForm = () => {
     reminderDays: [3, 1], assignedStudents: [], formLink: '',
   });
 
-  // Toggle: 'manual' | 'auto'
-  const [linkMode, setLinkMode]       = useState('manual');
-  const [questions, setQuestions]     = useState([newQuestion()]);
-  const [autoTitle, setAutoTitle]     = useState('');
-  const [autoDesc, setAutoDesc]       = useState('');
-
-  const [students, setStudents]       = useState([]);
-  const [loading, setLoading]         = useState(false);
-  const [generating, setGenerating]   = useState(false);
-  const [error, setError]             = useState('');
-  const [successUrl, setSuccessUrl]   = useState('');
+  const [linkMode, setLinkMode]     = useState('manual');
+  const [questions, setQuestions]   = useState([newQuestion()]);
+  const [autoTitle, setAutoTitle]   = useState('');
+  const [autoDesc, setAutoDesc]     = useState('');
+  const [students, setStudents]     = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError]           = useState('');
+  const [successUrl, setSuccessUrl] = useState('');
 
   const navigate = useNavigate();
 
@@ -247,7 +243,6 @@ const CreateForm = () => {
     API.get('/students').then(res => setStudents(res.data.students)).catch(() => {});
   }, []);
 
-  // Sync auto-title with form title when user switches to auto mode
   useEffect(() => {
     if (linkMode === 'auto' && !autoTitle && formData.title) {
       setAutoTitle(formData.title);
@@ -272,16 +267,9 @@ const CreateForm = () => {
     setFormData(prev => ({ ...prev, assignedStudents: students.map(s => s._id) }));
   };
 
-  // ── Question handlers ───────────────────────────────────────
-  const addQuestion = () => setQuestions(prev => [...prev, newQuestion()]);
-
-  const updateQuestion = (updated) =>
-    setQuestions(prev => prev.map(q => q.id === updated.id ? updated : q));
-
-  const removeQuestion = (id) => {
-    if (questions.length === 1) return; // keep at least 1
-    setQuestions(prev => prev.filter(q => q.id !== id));
-  };
+  const addQuestion    = () => setQuestions(prev => [...prev, newQuestion()]);
+  const updateQuestion = (updated) => setQuestions(prev => prev.map(q => q.id === updated.id ? updated : q));
+  const removeQuestion = (id) => { if (questions.length === 1) return; setQuestions(prev => prev.filter(q => q.id !== id)); };
 
   const moveQuestion = (index, dir) => {
     const arr = [...questions];
@@ -290,7 +278,6 @@ const CreateForm = () => {
     setQuestions(arr);
   };
 
-  // ── Validate questions before sending ──────────────────────
   const validateQuestions = () => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
@@ -303,7 +290,6 @@ const CreateForm = () => {
     return null;
   };
 
-  // ── Submit handler ──────────────────────────────────────────
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
@@ -325,26 +311,19 @@ const CreateForm = () => {
 
     setLoading(true);
     try {
-      // Step 1: Create the FormTrack form
       const payload = { ...formData };
-      if (linkMode === 'manual') {
-        // formLink already set in formData
-      } else {
-        payload.formLink = ''; // will be filled after generation
-      }
+      if (linkMode !== 'manual') payload.formLink = '';
 
       const res = await API.post('/forms', payload);
       const createdForm = res.data.form;
 
-      // Step 2: If auto mode, generate Google Form
       if (linkMode === 'auto') {
         setGenerating(true);
         try {
-          // Clean questions for API (strip internal id field)
           const cleanQuestions = questions.map(({ id, ...rest }) => {
             const q = { ...rest };
             if (CHOICE_TYPES.includes(q.type)) {
-              q.options = q.options.filter(o => o.trim()); // remove blank options
+              q.options = q.options.filter(o => o.trim());
             }
             return q;
           });
@@ -358,8 +337,6 @@ const CreateForm = () => {
           setSuccessUrl(genRes.data.url);
           setGenerating(false);
           setLoading(false);
-
-          // Show success briefly then redirect
           setTimeout(() => navigate('/teacher'), 2500);
           return;
         } catch (genErr) {
@@ -378,7 +355,6 @@ const CreateForm = () => {
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────
   return (
     <>
       <div className="page-header">
@@ -408,7 +384,6 @@ const CreateForm = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* ── Form details ── */}
         <div className="card">
           <div className="card-title" style={{ marginBottom: 20 }}>Form details</div>
           <div className="form-row">
@@ -436,14 +411,12 @@ const CreateForm = () => {
           </div>
         </div>
 
-        {/* ── Google Form link section with toggle ── */}
         <div className="card">
           <div className="card-title" style={{ marginBottom: 4 }}>Google Form link</div>
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
             Paste an existing link or let FormTrack generate one from your questions.
           </p>
 
-          {/* Toggle buttons */}
           <div style={{
             display: 'inline-flex', background: '#f3f4f6', borderRadius: 10,
             padding: 4, marginBottom: 20, gap: 4,
@@ -452,25 +425,19 @@ const CreateForm = () => {
               { key: 'manual', label: '🔗 Paste link manually' },
               { key: 'auto',   label: '✨ Auto-generate Google Form' },
             ].map(opt => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setLinkMode(opt.key)}
+              <button key={opt.key} type="button" onClick={() => setLinkMode(opt.key)}
                 style={{
                   padding: '8px 18px', borderRadius: 8, border: 'none',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  transition: 'all 0.15s',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
                   background: linkMode === opt.key ? '#fff' : 'transparent',
                   color:      linkMode === opt.key ? '#1D9E75' : '#6b7280',
                   boxShadow:  linkMode === opt.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
-                }}
-              >
+                }}>
                 {opt.label}
               </button>
             ))}
           </div>
 
-          {/* Manual mode */}
           {linkMode === 'manual' && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Google Form / submission link</label>
@@ -480,81 +447,48 @@ const CreateForm = () => {
             </div>
           )}
 
-          {/* Auto-generate mode */}
           {linkMode === 'auto' && (
             <div>
-              {/* Google Form title + description */}
               <div className="form-row" style={{ marginBottom: 0 }}>
                 <div className="form-group">
                   <label className="form-label">Google Form title *</label>
-                  <input className="form-input"
-                    placeholder="e.g. Internship Status Form"
-                    value={autoTitle}
-                    onChange={e => setAutoTitle(e.target.value)} />
+                  <input className="form-input" placeholder="e.g. Internship Status Form"
+                    value={autoTitle} onChange={e => setAutoTitle(e.target.value)} />
                   <span className="form-hint">This appears as the title on the actual Google Form</span>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Google Form description</label>
-                  <input className="form-input"
-                    placeholder="e.g. Fill in your internship details accurately"
-                    value={autoDesc}
-                    onChange={e => setAutoDesc(e.target.value)} />
+                  <input className="form-input" placeholder="e.g. Fill in your internship details accurately"
+                    value={autoDesc} onChange={e => setAutoDesc(e.target.value)} />
                   <span className="form-hint">Optional subtitle shown below the form title</span>
                 </div>
               </div>
 
-              {/* Divider */}
               <div style={{ borderTop: '1px solid #f3f4f6', margin: '20px 0' }} />
 
-              {/* Questions header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
-                    Questions ({questions.length})
-                  </div>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-                    These will become the actual questions inside the Google Form
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>Questions ({questions.length})</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>These will become the actual questions inside the Google Form</div>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={addQuestion}
-                >
-                  + Add question
-                </button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={addQuestion}>+ Add question</button>
               </div>
 
-              {/* Question cards */}
               {questions.map((q, i) => (
-                <QuestionCard
-                  key={q.id}
-                  q={q}
-                  index={i}
-                  total={questions.length}
-                  onChange={updateQuestion}
-                  onRemove={removeQuestion}
-                  onMove={moveQuestion}
-                />
+                <QuestionCard key={q.id} q={q} index={i} total={questions.length}
+                  onChange={updateQuestion} onRemove={removeQuestion} onMove={moveQuestion} />
               ))}
 
-              {/* Add question CTA at bottom */}
-              <button
-                type="button"
-                onClick={addQuestion}
+              <button type="button" onClick={addQuestion}
                 style={{
                   width: '100%', padding: '12px', border: '2px dashed #d1fae5',
                   borderRadius: 10, background: '#f0fdf4', color: '#1D9E75',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  marginTop: 4, transition: 'all 0.15s',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer', marginTop: 4, transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => e.target.style.borderColor = '#1D9E75'}
                 onMouseLeave={e => e.target.style.borderColor = '#d1fae5'}
-              >
-                + Add another question
-              </button>
+              >+ Add another question</button>
 
-              {/* Info banner */}
               <div style={{
                 marginTop: 16, padding: '12px 16px', background: '#eff6ff',
                 border: '1px solid #bfdbfe', borderRadius: 10,
@@ -571,7 +505,6 @@ const CreateForm = () => {
           )}
         </div>
 
-        {/* ── Reward & penalty ── */}
         <div className="card">
           <div className="card-title" style={{ marginBottom: 20 }}>Reward & penalty settings</div>
           <div className="form-row">
@@ -610,13 +543,10 @@ const CreateForm = () => {
           </div>
         </div>
 
-        {/* ── Assign students ── */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">Assign students ({formData.assignedStudents.length} selected)</span>
-            <button type="button" className="btn btn-sm" onClick={selectAll}>
-              Select all ({students.length})
-            </button>
+            <button type="button" className="btn btn-sm" onClick={selectAll}>Select all ({students.length})</button>
           </div>
           {students.length === 0 ? (
             <div className="empty-state" style={{ padding: '20px' }}>
@@ -627,9 +557,7 @@ const CreateForm = () => {
               {students.map(student => {
                 const selected = formData.assignedStudents.includes(student._id);
                 return (
-                  <div
-                    key={student._id}
-                    onClick={() => handleStudentToggle(student._id)}
+                  <div key={student._id} onClick={() => handleStudentToggle(student._id)}
                     style={{
                       padding: '10px 14px',
                       border: `1px solid ${selected ? '#1D9E75' : '#e8ecf0'}`,
@@ -637,8 +565,7 @@ const CreateForm = () => {
                       background: selected ? '#ecfdf5' : '#fff',
                       transition: 'all 0.15s',
                       display: 'flex', alignItems: 'center', gap: 10,
-                    }}
-                  >
+                    }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%',
                       background: selected ? '#1D9E75' : '#f3f4f6',
@@ -664,17 +591,13 @@ const CreateForm = () => {
           )}
         </div>
 
-        {/* ── Submit buttons ── */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
           <button type="button" className="btn" onClick={() => navigate('/teacher')}>Cancel</button>
           <button type="submit" className="btn btn-primary" disabled={loading || generating}>
-            {generating
-              ? '⚙️ Generating Google Form...'
-              : loading
-                ? 'Publishing...'
-                : linkMode === 'auto'
-                  ? '🚀 Publish & Generate Google Form'
-                  : '🚀 Publish form'}
+            {generating ? '⚙️ Generating Google Form...'
+              : loading ? 'Publishing...'
+              : linkMode === 'auto' ? '🚀 Publish & Generate Google Form'
+              : '🚀 Publish form'}
           </button>
         </div>
       </form>
