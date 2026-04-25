@@ -227,15 +227,18 @@ const CreateForm = () => {
     reminderDays: [3, 1], assignedStudents: [], formLink: '',
   });
 
-  const [linkMode, setLinkMode]     = useState('manual');
-  const [questions, setQuestions]   = useState([newQuestion()]);
-  const [autoTitle, setAutoTitle]   = useState('');
-  const [autoDesc, setAutoDesc]     = useState('');
-  const [students, setStudents]     = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError]           = useState('');
-  const [successUrl, setSuccessUrl] = useState('');
+  const [linkMode, setLinkMode]               = useState('manual');
+  const [questions, setQuestions]             = useState([newQuestion()]);
+  const [autoTitle, setAutoTitle]             = useState('');
+  const [autoDesc, setAutoDesc]               = useState('');
+  const [students, setStudents]               = useState([]);
+  const [loading, setLoading]                 = useState(false);
+  const [generating, setGenerating]           = useState(false);
+  const [aiTopic, setAiTopic]                 = useState('');
+  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [aiLoading, setAiLoading]             = useState(false);
+  const [error, setError]                     = useState('');
+  const [successUrl, setSuccessUrl]           = useState('');
 
   const navigate = useNavigate();
 
@@ -270,6 +273,43 @@ const CreateForm = () => {
   const addQuestion    = () => setQuestions(prev => [...prev, newQuestion()]);
   const updateQuestion = (updated) => setQuestions(prev => prev.map(q => q.id === updated.id ? updated : q));
   const removeQuestion = (id) => { if (questions.length === 1) return; setQuestions(prev => prev.filter(q => q.id !== id)); };
+
+  const generateQuestionsWithAI = async () => {
+    if (!aiTopic.trim()) {
+      setError('Please enter a topic for AI generation.');
+      return;
+    }
+    setAiLoading(true);
+    setError('');
+    try {
+      const res = await API.post('/ai/generate-questions', {
+        topic: aiTopic,
+        subject: formData.subject,
+        questionCount: aiQuestionCount,
+      });
+
+      const aiQuestions = res.data.questions.map((q, i) => ({
+        id: Date.now() + i + Math.random(),
+        // Groq returns 'title' field directly
+        title: q.title || q.question || '',
+        type: q.type === 'multiple_choice' ? 'radio' : (q.type || 'text'),
+        required: true,
+        options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['', ''],
+        low: 1, high: 5, lowLabel: '', highLabel: '',
+      }));
+
+      // Remove empty/blank questions first, then add AI questions
+setQuestions(prev => {
+  const nonEmpty = prev.filter(q => q.title.trim() !== '');
+  return [...nonEmpty, ...aiQuestions];
+});
+      setAiTopic('');
+    } catch (err) {
+      setError('Failed to generate questions. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const moveQuestion = (index, dir) => {
     const arr = [...questions];
@@ -465,6 +505,56 @@ const CreateForm = () => {
               </div>
 
               <div style={{ borderTop: '1px solid #f3f4f6', margin: '20px 0' }} />
+
+              {/* ── AI Question Generator ── */}
+              <div style={{
+                border: '2px dashed #1D9E75',
+                borderRadius: 12,
+                padding: '18px 20px',
+                marginBottom: 20,
+                background: '#f0fdf4',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 18 }}>✨</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#065f46' }}>Generate questions with AI</div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>AI will suggest questions — you can edit or delete them after</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ flex: 1, margin: 0, minWidth: 220 }}
+                    placeholder="Enter topic e.g. Linked Lists, DBMS, OS Scheduling"
+                    value={aiTopic}
+                    onChange={e => setAiTopic(e.target.value)}
+                  />
+                  <select
+                    className="form-select"
+                    style={{ width: 140, margin: 0 }}
+                    value={aiQuestionCount}
+                    onChange={e => setAiQuestionCount(Number(e.target.value))}
+                  >
+                    <option value={3}>3 questions</option>
+                    <option value={5}>5 questions</option>
+                    <option value={8}>8 questions</option>
+                    <option value={10}>10 questions</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={generateQuestionsWithAI}
+                    disabled={aiLoading}
+                    style={{ opacity: aiLoading ? 0.7 : 1 }}
+                  >
+                    {aiLoading ? '⏳ Generating...' : '✨ Generate with AI'}
+                  </button>
+                </div>
+                <p style={{ margin: '10px 0 0 0', fontSize: 12, color: '#6b7280' }}>
+                  AI will add questions to your form. You can edit or delete them after.
+                </p>
+              </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div>
