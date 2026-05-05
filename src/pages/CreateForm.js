@@ -18,15 +18,16 @@ const CHOICE_TYPES = ['radio', 'checkbox', 'dropdown'];
 
 // ── Empty question template ───────────────────────────────────
 const newQuestion = () => ({
-  id:        Date.now() + Math.random(),
-  type:      'text',
-  title:     '',
-  required:  true,
-  options:   ['', ''],
-  low:       1,
-  high:      5,
-  lowLabel:  '',
-  highLabel: '',
+  id:            Date.now() + Math.random(),
+  type:          'text',
+  title:         '',
+  required:      true,
+  options:       ['', ''],
+  correctAnswer: null,   // index of correct option (null = not set)
+  low:           1,
+  high:          5,
+  lowLabel:      '',
+  highLabel:     '',
 });
 
 // ── Single question card ──────────────────────────────────────
@@ -45,7 +46,16 @@ const QuestionCard = ({ q, index, total, onChange, onRemove, onMove }) => {
 
   const removeOption = (i) => {
     if (q.options.length <= 2) return;
-    onChange({ ...q, options: q.options.filter((_, idx) => idx !== i) });
+    // If the removed option was the correct answer, clear it
+    const newCorrect = q.correctAnswer === i ? null
+      : q.correctAnswer > i ? q.correctAnswer - 1
+      : q.correctAnswer;
+    onChange({ ...q, options: q.options.filter((_, idx) => idx !== i), correctAnswer: newCorrect });
+  };
+
+  const setCorrectAnswer = (i) => {
+    // Toggle off if clicking same one
+    onChange({ ...q, correctAnswer: q.correctAnswer === i ? null : i });
   };
 
   return (
@@ -144,32 +154,80 @@ const QuestionCard = ({ q, index, total, onChange, onRemove, onMove }) => {
       {/* Choice options */}
       {isChoice && (
         <div style={{ paddingLeft: 36 }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Answer options:</div>
-          {q.options.map((opt, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#9ca3af', width: 16, flexShrink: 0 }}>
-                {q.type === 'checkbox' ? '☐' : q.type === 'dropdown' ? `${i+1}.` : '○'}
-              </span>
-              <input
-                className="form-input"
-                style={{ flex: 1, margin: 0, fontSize: 13, padding: '6px 10px' }}
-                placeholder={`Option ${i + 1}`}
-                value={opt}
-                onChange={e => updateOption(i, e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => removeOption(i)}
-                disabled={q.options.length <= 2}
-                style={{
-                  width: 24, height: 24, border: '1px solid #e8ecf0', borderRadius: 4,
-                  background: '#f9fafb', color: '#9ca3af', cursor: q.options.length <= 2 ? 'not-allowed' : 'pointer',
-                  fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: q.options.length <= 2 ? 0.4 : 1,
-                }}
-              >✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>Answer options:</div>
+            <div style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: '#1D9E75', fontSize: 13 }}>✓</span>
+              Click the green circle to mark the correct answer
             </div>
-          ))}
+          </div>
+          {q.options.map((opt, i) => {
+            const isCorrect = q.correctAnswer === i;
+            return (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                {/* Correct answer toggle button */}
+                <button
+                  type="button"
+                  onClick={() => setCorrectAnswer(i)}
+                  title={isCorrect ? 'Marked as correct — click to unmark' : 'Mark as correct answer'}
+                  style={{
+                    width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                    border: isCorrect ? '2px solid #1D9E75' : '2px solid #d1d5db',
+                    background: isCorrect ? '#1D9E75' : '#fff',
+                    color: isCorrect ? '#fff' : '#9ca3af',
+                    cursor: 'pointer',
+                    fontSize: 11, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {isCorrect ? '✓' : ''}
+                </button>
+
+                <input
+                  className="form-input"
+                  style={{
+                    flex: 1, margin: 0, fontSize: 13, padding: '6px 10px',
+                    borderColor: isCorrect ? '#1D9E75' : undefined,
+                    background: isCorrect ? '#f0fdf4' : undefined,
+                  }}
+                  placeholder={`Option ${i + 1}`}
+                  value={opt}
+                  onChange={e => updateOption(i, e.target.value)}
+                />
+                {isCorrect && (
+                  <span style={{
+                    fontSize: 10, color: '#1D9E75', fontWeight: 700,
+                    background: '#dcfce7', padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+                  }}>
+                    CORRECT
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeOption(i)}
+                  disabled={q.options.length <= 2}
+                  style={{
+                    width: 24, height: 24, border: '1px solid #e8ecf0', borderRadius: 4,
+                    background: '#f9fafb', color: '#9ca3af', cursor: q.options.length <= 2 ? 'not-allowed' : 'pointer',
+                    fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: q.options.length <= 2 ? 0.4 : 1, flexShrink: 0,
+                  }}
+                >✕</button>
+              </div>
+            );
+          })}
+
+          {/* No correct answer warning */}
+          {q.correctAnswer === null && (
+            <div style={{
+              fontSize: 11, color: '#f59e0b', marginTop: 4, marginBottom: 4,
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>
+              <span>⚠️</span> No correct answer marked — click a circle above to set one
+            </div>
+          )}
+
           <button
             type="button"
             onClick={addOption}
@@ -235,7 +293,7 @@ const CreateForm = () => {
   const [loading, setLoading]                 = useState(false);
   const [generating, setGenerating]           = useState(false);
   const [aiTopic, setAiTopic]                 = useState('');
-  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [aiQuestionCount, setAiQuestionCount] = useState(10);
   const [aiLoading, setAiLoading]             = useState(false);
   const [error, setError]                     = useState('');
   const [successUrl, setSuccessUrl]           = useState('');
@@ -279,30 +337,32 @@ const CreateForm = () => {
       setError('Please enter a topic for AI generation.');
       return;
     }
+    // Clamp between 1 and 50
+    const count = Math.min(50, Math.max(1, Number(aiQuestionCount) || 10));
     setAiLoading(true);
     setError('');
     try {
       const res = await API.post('/ai/generate-questions', {
         topic: aiTopic,
         subject: formData.subject,
-        questionCount: aiQuestionCount,
+        questionCount: count,
       });
 
       const aiQuestions = res.data.questions.map((q, i) => ({
-        id: Date.now() + i + Math.random(),
-        // Groq returns 'title' field directly
-        title: q.title || q.question || '',
-        type: q.type === 'multiple_choice' ? 'radio' : (q.type || 'text'),
-        required: true,
-        options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['', ''],
+        id:            Date.now() + i + Math.random(),
+        title:         q.title || q.question || '',
+        type:          q.type === 'multiple_choice' ? 'radio' : (q.type || 'text'),
+        required:      true,
+        options:       Array.isArray(q.options) && q.options.length > 0 ? q.options : ['', ''],
+        // AI now returns correctAnswer as an index (0-3) or null
+        correctAnswer: (q.correctAnswer !== undefined && q.correctAnswer !== null) ? q.correctAnswer : null,
         low: 1, high: 5, lowLabel: '', highLabel: '',
       }));
 
-      // Remove empty/blank questions first, then add AI questions
-setQuestions(prev => {
-  const nonEmpty = prev.filter(q => q.title.trim() !== '');
-  return [...nonEmpty, ...aiQuestions];
-});
+      setQuestions(prev => {
+        const nonEmpty = prev.filter(q => q.title.trim() !== '');
+        return [...nonEmpty, ...aiQuestions];
+      });
       setAiTopic('');
     } catch (err) {
       setError('Failed to generate questions. Please try again.');
@@ -360,11 +420,12 @@ setQuestions(prev => {
       if (linkMode === 'auto') {
         setGenerating(true);
         try {
-          const cleanQuestions = questions.map(({ id, ...rest }) => {
+          const cleanQuestions = questions.map(({ id, correctAnswer, ...rest }) => {
             const q = { ...rest };
             if (CHOICE_TYPES.includes(q.type)) {
               q.options = q.options.filter(o => o.trim());
             }
+            // correctAnswer is stored in FormTrack but not sent to Google Forms API
             return q;
           });
 
@@ -518,10 +579,10 @@ setQuestions(prev => {
                   <span style={{ fontSize: 18 }}>✨</span>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#065f46' }}>Generate questions with AI</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>AI will suggest questions — you can edit or delete them after</div>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>AI will suggest questions with correct answers marked — you can edit or delete them after</div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <input
                     type="text"
                     className="form-input"
@@ -529,30 +590,38 @@ setQuestions(prev => {
                     placeholder="Enter topic e.g. Linked Lists, DBMS, OS Scheduling"
                     value={aiTopic}
                     onChange={e => setAiTopic(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && generateQuestionsWithAI()}
                   />
-                  <select
-                    className="form-select"
-                    style={{ width: 140, margin: 0 }}
-                    value={aiQuestionCount}
-                    onChange={e => setAiQuestionCount(Number(e.target.value))}
-                  >
-                    <option value={3}>3 questions</option>
-                    <option value={5}>5 questions</option>
-                    <option value={8}>8 questions</option>
-                    <option value={10}>10 questions</option>
-                  </select>
+
+                  {/* ── Number input instead of fixed dropdown ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ width: 70, margin: 0, textAlign: 'center' }}
+                      min={1}
+                      max={50}
+                      value={aiQuestionCount}
+                      onChange={e => {
+                        const val = Math.min(50, Math.max(1, Number(e.target.value) || 1));
+                        setAiQuestionCount(val);
+                      }}
+                    />
+                    <span style={{ fontSize: 13, color: '#6b7280', flexShrink: 0 }}>questions</span>
+                  </div>
+
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={generateQuestionsWithAI}
                     disabled={aiLoading}
-                    style={{ opacity: aiLoading ? 0.7 : 1 }}
+                    style={{ opacity: aiLoading ? 0.7 : 1, flexShrink: 0 }}
                   >
                     {aiLoading ? '⏳ Generating...' : '✨ Generate with AI'}
                   </button>
                 </div>
                 <p style={{ margin: '10px 0 0 0', fontSize: 12, color: '#6b7280' }}>
-                  AI will add questions to your form. You can edit or delete them after.
+                  Enter any number from 1–50. AI will add questions with correct answers pre-marked. You can edit or delete them after.
                 </p>
               </div>
 
@@ -588,7 +657,7 @@ setQuestions(prev => {
                 <div style={{ fontSize: 12, color: '#1e40af', lineHeight: 1.5 }}>
                   <strong>How it works:</strong> When you click "Publish form", FormTrack will automatically
                   create a real Google Form with your questions and save the link. Students will receive
-                  this Google Form link to fill out.
+                  this Google Form link to fill out. Correct answers are stored in FormTrack for grading.
                 </div>
               </div>
             </div>
